@@ -1,0 +1,1561 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#28a745">
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>💰 Money App</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+  body {
+    font-family: 'Segoe UI', sans-serif;
+    max-width: 520px;
+    margin: auto;
+    padding: 16px;
+    background: #f8f9fa;
+    color: #333;
+    transition: 0.3s;
+  }
+
+  h1 { text-align: center; margin-bottom: 20px; }
+
+  input, select {
+    padding: 12px;
+    margin: 5px 0;
+    width: 100%;
+    border-radius: 10px;
+    border: 1px solid #ccc;
+    font-size: 16px;
+    transition: 0.2s;
+    box-sizing: border-box;
+  }
+
+  button {
+    padding: 12px;
+    margin: 5px 0;
+    width: 100%;
+    min-height: 48px;
+    border-radius: 10px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: 0.2s;
+    box-sizing: border-box;
+  }
+
+  button + button {
+    margin-top: 8px;
+  }
+
+  #addPaymentBtn { background: #28a745; color: white; border: none; }
+  #addPaymentBtn:hover { background: #218838; }
+
+  #toggleList { background: #007bff; color: white; border: none; }
+  #toggleList:hover { background: #0056b3; }
+
+  #toggleDarkMode { background: #fd7e14; color: white; border: none; }
+  #toggleDarkMode:hover { background: #e06b00; }
+
+  #categoryBtn { background: #ffc107; color: #333; border: none; }
+  #categoryBtn:hover { background: #e0a800; }
+
+  #addCategoryBtn { background: #17a2b8; color: white; border: none; }
+  #addCategoryBtn:hover { background: #117a8b; }
+
+  #recurringBtn { background: #6f42c1; color: white; border: none; }
+  #recurringBtn:hover { background: #5936a2; }
+
+  #addRecCategoryBtn { background: #0d6efd; color: white; border: none; }
+  #addRecCategoryBtn:hover { background: #0b5ed7; }
+
+  #monthlyBtn { background: #198754; color: white; border: none; }
+  #monthlyBtn:hover { background: #146c43; }
+
+  #exportBtn { background: #20c997; color: white; border: none;}
+  #exportBtn:hover { background: #17a589}
+
+  ul { padding: 0; list-style: none; margin-top: 10px; }
+
+  li {
+    margin: 10px 0;
+    padding: 12px;
+    border-radius: 12px;
+    display: flex;
+    justify-content: space-between;
+    flex-direction: column;
+    align-items: flex-start;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.08);
+    font-size: 15px;
+    gap: 8px;
+  }
+  li button {
+    align-self: flex-end;
+  }
+
+  .positive { background: #d4edda; color: #155724; }
+  .negative { background: #f8d7da; color: #721c24; }
+
+  .section {
+    margin-top: 20px;
+    padding: 16px;
+    border-radius: 12px;
+    background: #fff;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+  }
+
+  #chartWrapper {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  margin-top: 10px;
+}
+
+#chartContainer {
+  width: 100%;
+  padding: 20px 15px 28px 15px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  box-sizing: border-box;
+}
+
+#chartCanvasWrap {
+  width: 100%;
+  height: 340px;
+  position: relative;
+}
+
+#chart {
+  width: 100% !important;
+  height: 100% !important;
+  display: block;
+}
+
+#chartLegend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+  margin-bottom: 6px;
+  width: 100%;
+}
+
+#chartMessage {
+    font-style: italic;
+    color: #666;
+  }
+
+  #toggleList {
+    margin-bottom: 10px;
+  }
+
+.chart-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border: none;
+  border-radius: 999px;
+  background: #f1f3f5;
+  cursor: pointer;
+  font-weight: 600;
+  width: auto;
+}
+
+.chart-legend-item.hidden {
+  opacity: 0.45;
+  text-decoration: line-through;
+}
+
+.chart-legend-swatch {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+  .chart-controls {
+  display: flex;
+  flex-direction: column; /* checkbox sopra il grafico */
+  gap: 10px;
+  margin-bottom: 10px;
+  align-items: flex-start; /* allinea la checkbox a sinistra */
+}
+
+  .chart-toggle {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: bold;
+    margin-top: 0;
+  }
+
+  .chart-toggle input {
+    width: auto;
+    margin: 0;
+    transform: scale(1.2);
+    flex-shrink: 0;
+  }
+
+  .chart-period-wrap {
+    display: none;
+  }
+
+  .categoryItem {
+    padding: 10px;
+    border-radius: 10px;
+    display: flex;
+    justify-content: space-between;
+    background: #f1f3f5;
+    margin: 5px 0;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .categoryDelete {
+  background: #dc3545;
+  color: white;
+  border: none;
+  padding: 4px 8px;
+  cursor: pointer;
+  border-radius: 6px;
+  width: auto;
+}
+
+.categoryDelete:hover {
+  background: #b02a37;
+}
+
+.categoryEdit {
+  background: #6c757d;
+  color: white;
+  border: none;
+  padding: 4px 8px;
+  cursor: pointer;
+  border-radius: 6px;
+  width: auto;
+}
+
+.categoryEdit:hover {
+  background: #545b62;
+}
+
+  .delete {
+    background: #dc3545;
+    color: white;
+    border: none;
+    padding: 6px 10px;
+    border-radius: 8px;
+    cursor: pointer;
+    width: auto;
+  }
+
+  .hint {
+    font-size: 13px;
+    opacity: 0.8;
+    margin-top: -2px;
+    margin-bottom: 6px;
+  }
+  .section-purple { border: 2px solid #6f42c1; box-shadow: 0 0 8px rgba(111,66,193,0.3); }
+
+  .section-yellow {
+    border: 2px solid #ffc107;
+  }
+
+  .section-green {
+    border: 2px solid #198754;
+  }
+
+  @media (max-width: 500px) {
+    input, select, button { font-size: 18px; padding: 14px; }
+    li { font-size: 16px; padding: 14px; }
+    #chartContainer { padding: 15px; }
+  }
+
+  body.dark {
+    background: #1e1e1e;
+    color: #f0f0f0;
+  }
+
+  body.dark input, body.dark select {
+    background: #2c2c2c;
+    color: #f0f0f0;
+    border: 1px solid #555;
+  }
+
+  body.dark button {
+    background: #3a3a3a;
+    color: #f0f0f0;
+    border: 1px solid #555;
+  }
+
+body.dark .chart-legend-item {
+  background: #383838;
+  color: #f0f0f0;
+}
+
+  body.dark button:hover { background: #505050; }
+
+  body.dark li { box-shadow: 0 2px 5px rgba(255,255,255,0.05); }
+  body.dark .section { background: #2c2c2c; box-shadow: 0 2px 5px rgba(255,255,255,0.05); }
+  body.dark #chartContainer { background: #2c2c2c; box-shadow: 0 2px 5px rgba(255,255,255,0.05); }
+  body.dark .categoryItem { background: #383838; }
+</style>
+</head>
+<body>
+
+<h1>💰 Money App</h1>
+
+<!-- PAGAMENTO NORMALE -->
+<div class="section">
+  <h3>Operazione </h3>
+  <div class="hint">Senza segno davanti = pagamento. Con + = entrata.</div>
+  <input id="amount" type="text" inputmode="decimal" placeholder="Importo">
+  <select id="category"></select>
+  <input id="desc" type="text" placeholder="Descrizione (opzionale)">
+  <input id="date" type="date">
+  <button id="addPaymentBtn" onclick="addTransaction()">Aggiungi pagamento</button>
+</div>
+
+<h2>Saldo: <span id="balance">0</span>€</h2>
+
+<button id="toggleList" onclick="toggleList()">Mostra Tutto</button>
+<ul id="list"></ul>
+
+<button id="toggleDarkMode" onclick="toggleDarkMode()">🌙 Modalità scura</button>
+
+<!-- GRAFICO -->
+<div class="section">
+  <div class="chart-controls">
+    <!-- Toggle grafico -->
+    <label class="chart-toggle">
+      <input type="checkbox" id="showChart" onchange="toggleChart()">
+      <span>Mostra grafico 📊</span>
+    </label>
+  </div>
+
+  <!-- Questo div contiene tutto ciò che riguarda il grafico -->
+  <div id="chartWrapper" style="display:none; margin-top:10px;">
+    <!-- Selezione periodo -->
+    <div id="chartPeriodWrap" class="chart-period-wrap">
+      <select id="chartPeriod" onchange="updateChart()">
+        <option value="all">Tutto</option>
+        <option value="month">Mese corrente</option>
+        <option value="year">Anno corrente</option>
+        <option value="30days">Ultimi 30 giorni</option>
+      </select>
+    </div>
+
+    <!-- Checkbox per percentuali -->
+    <label class="chart-toggle" id="percentCheckboxLabel" style="display:none; margin-left:10px;">
+      <input type="checkbox" id="showPercentages" onchange="updateChart()">
+      <span>Mostra percentuali</span>
+    </label>
+
+    <div id="chartContainer">
+  <div id="chartCanvasWrap">
+    <canvas id="chart"></canvas>
+  </div>
+
+  <p id="chartMessage" style="text-align:center; margin-top:10px; font-size:14px; opacity:0.8; display:none;"></p>
+  <div id="chartHint" style="font-size:12px; opacity:0.7; text-align:center; margin-top:8px;">
+    Tocca una categoria per nasconderla/mostrarla
+  </div>
+  <div id="chartLegend" style="display:none; margin-top:12px;"></div>
+</div>
+</div>
+  </div>
+</div>
+
+<!-- CATEGORIE NORMALI -->
+<div class="section">
+  <button id="categoryBtn" onclick="toggleCategorySection()">
+    Gestisci categorie <span id="categoryIcon">▶</span>
+  </button>
+</div>
+
+<div id="categorySection" class="section">
+  <h3>Categorie normali</h3>
+  <input id="newCategory" type="text" placeholder="Nuova categoria normale">
+  <button id="addCategoryBtn" onclick="addCategory()">Aggiungi categoria</button>
+  <ul id="categoryList"></ul>
+</div>
+
+<!-- RICORRENZE -->
+<div class="section">
+  <button id="recurringBtn" onclick="toggleRecurringSection()">
+    Ricorrenze <span id="recurringIcon">▶</span>
+  </button>
+</div>
+
+<div id="recurringSection" class="section">
+  <h3>Nuova ricorrenza</h3>
+  <div class="hint">Senza segno davanti = pagamento. Con + davanti = entrata.</div>
+
+  <input id="recAmount" type="text" inputmode="decimal" placeholder="Importo">
+  <select id="recCategory"></select>
+  <input id="recDesc" type="text" placeholder="Descrizione (opzionale)">
+  <input id="recStartDate" type="date" placeholder="Data inizio (opzionale)">
+  <select id="recFrequency">
+    <option value="daily">Giornaliera</option>
+    <option value="weekly">Settimanale</option>
+    <option value="monthly">Mensile</option>
+    <option value="yearly">Annuale</option>
+  </select>
+  <button onclick="addRecurring()">Aggiungi ricorrenza</button>
+
+  <h4>Ricorrenze </h4>
+<ul id="recurringList"></ul>
+
+<!-- Pulsante e lista categorie ricorrenze -->
+<div style="margin-top:12px;">
+  <button id="recCategoryBtn" onclick="toggleRecCategorySection()" style="background:#0d6efd; color:white; border:none;">
+    Gestisci categorie ricorrenze <span id="recCategoryIcon">▶</span>
+  </button>
+</div>
+
+<div id="recCategorySection" class="section" style="display:none; margin-top:8px;">
+  <h4>Categorie Ricorrenze</h4>
+  <input id="newRecCategory" type="text" placeholder="Nuova categoria ricorrenza">
+  <button id="addRecCategoryBtn" onclick="addRecurringCategory()">Aggiungi categoria ricorrenza</button>
+  <ul id="recCategoryList"></ul>
+</div>
+</div>
+
+<!-- RESOCONTO MENSILE -->
+<div class="section">
+  <button id="monthlyBtn" onclick="toggleMonthlySection()">
+    Resoconto mensile <span id="monthlyIcon">▶</span>
+  </button>
+</div>
+
+<div id="monthlySection" class="section">
+  <h3>📊 Resoconto mensile</h3>
+  <input type="month" id="monthPicker">
+  <p>Entrate: <span id="monthlyIncome">0</span>€</p>
+  <p>Uscite: <span id="monthlyExpense">0</span>€</p>
+  <p><strong>Saldo: <span id="monthlyBalance">0</span>€</strong></p>
+</div>
+
+<button id="exportBtn" onclick="exportData()">📤 Esporta dati</button>
+
+<input type="file" id="importFile" accept=".json" style="display:none">
+<button onclick="triggerImport()">📥 Importa dati</button>
+
+<script>
+let transactions = JSON.parse(localStorage.getItem("tx")) || [];
+let normalCategories = JSON.parse(localStorage.getItem("cat")) || ["Cibo", "Trasporti", "Casa", "Svago", "Altro"];
+let recurringTemplates = JSON.parse(localStorage.getItem("rtx")) || [];
+let recurringCategories = JSON.parse(localStorage.getItem("rcat")) || ["Telefono", "Abbonamenti", "Affitto", "Altro"];
+
+let chart;
+let chartInitialized = false;
+let showAll = false;
+let hiddenLegendLabels = new Set();
+
+function uid() {
+  return Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+}
+
+function capitalize(str) {
+  if (!str) return "";
+  return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
+}
+
+function save() {
+  localStorage.setItem("tx", JSON.stringify(transactions));
+  localStorage.setItem("cat", JSON.stringify(normalCategories));
+  localStorage.setItem("rtx", JSON.stringify(recurringTemplates));
+  localStorage.setItem("rcat", JSON.stringify(recurringCategories));
+}
+
+function todayISO() {
+  const d = new Date();
+  return toISODate(d);
+}
+
+function toISODate(dateObj) {
+  const y = dateObj.getFullYear();
+  const m = String(dateObj.getMonth() + 1).padStart(2, "0");
+  const d = String(dateObj.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}
+
+function formatDate(dateObj) {
+  const d = String(dateObj.getDate()).padStart(2, "0");
+  const m = String(dateObj.getMonth() + 1).padStart(2, "0");
+  const y = dateObj.getFullYear();
+  return `${d}/${m}/${y}`;
+}
+
+function parseISODate(iso) {
+  if (!iso) return null;
+  const d = new Date(iso + "T00:00:00");
+  return isNaN(d.getTime()) ? null : d;
+}
+
+function nextOccurrence(dateObj, frequency) {
+  const d = new Date(dateObj);
+  if (frequency === "daily") d.setDate(d.getDate() + 1);
+  else if (frequency === "weekly") d.setDate(d.getDate() + 7);
+  else if (frequency === "monthly") d.setMonth(d.getMonth() + 1);
+  else if (frequency === "yearly") d.setFullYear(d.getFullYear() + 1);
+  return d;
+}
+
+function frequencyLabel(freq) {
+  if (freq === "daily") return "Giornaliera";
+  if (freq === "weekly") return "Settimanale";
+  if (freq === "monthly") return "Mensile";
+  if (freq === "yearly") return "Annuale";
+  return freq;
+}
+
+function recurrencePrefix(freq) {
+  return `Ricorrente: ${frequencyLabel(freq)}`;
+}
+
+function normalizeAmount(raw) {
+  if (!raw) return null;
+  raw = String(raw).trim().replace(",", ".");
+
+  const value = Number(raw);
+
+  if (isNaN(value)) return null;
+
+  // Se l'utente mette + → entrata
+  if (raw.startsWith("+")) return Math.abs(value);
+
+  // Se mette - → pagamento
+  if (raw.startsWith("-")) return -Math.abs(value);
+
+  // Se NON mette segno → pagamento (default)
+  return -Math.abs(value);
+}
+
+function guardAmountInput(el) {
+  let v = el.value;
+  v = v.replace(/[^\d+\-.,]/g, "");
+
+  const sign = v.match(/^[+-]/)?.[0] || "";
+  v = v.replace(/^[+-]/, "");
+  v = v.replace(/[+-]/g, "");
+
+  const firstSepIndex = v.search(/[.,]/);
+  if (firstSepIndex !== -1) {
+    const before = v.slice(0, firstSepIndex + 1);
+    const after = v.slice(firstSepIndex + 1).replace(/[.,]/g, "");
+    v = before + after;
+  }
+
+  el.value = sign + v;
+}
+
+function renderCategories() {
+  // --- MENU A TENDINA ---
+  const categorySelect = document.getElementById("category");
+  categorySelect.innerHTML = "";
+  const normalOpts = normalCategories.filter(c => c !== "Altro" && c !== "Indefinito").sort();
+  normalOpts.push("Altro");
+  normalOpts.forEach(cat => {
+    const opt = document.createElement("option");
+    opt.value = cat;
+    opt.textContent = cat;
+    categorySelect.appendChild(opt);
+  });
+
+  const recSelect = document.getElementById("recCategory");
+  recSelect.innerHTML = "";
+  const recOpts = recurringCategories.filter(c => c !== "Altro" && c !== "Indefinito").sort();
+  recOpts.push("Altro");
+  recOpts.forEach(cat => {
+    const opt = document.createElement("option");
+    opt.value = cat;
+    opt.textContent = cat;
+    recSelect.appendChild(opt);
+  });
+
+  // --- LISTA CATEGORIE NORMALI ---
+  const categoryList = document.getElementById("categoryList");
+  categoryList.innerHTML = "";
+  [...normalCategories].filter(c => c !== "Altro").sort().forEach(cat => {
+    const li = document.createElement("li");
+    li.className = "categoryItem";
+    const span = document.createElement("span");
+    span.textContent = cat;
+    li.appendChild(span);
+
+    if (cat !== "Indefinito") {
+      const btn = document.createElement("button");
+      btn.textContent = "X";
+      btn.className = "categoryDelete";
+      btn.onclick = () => removeCategory(cat);
+      li.appendChild(btn);
+    }
+    categoryList.appendChild(li);
+  });
+  // Aggiungi "Altro" in fondo
+  if (normalCategories.includes("Altro")) {
+    const li = document.createElement("li");
+    li.className = "categoryItem";
+    const span = document.createElement("span");
+    span.textContent = "Altro";
+    li.appendChild(span);
+    categoryList.appendChild(li);
+  }
+
+  // --- LISTA CATEGORIE RICORRENZE ---
+const recCategoryList = document.getElementById("recCategoryList");
+recCategoryList.innerHTML = "";
+[...recurringCategories].filter(c => c !== "Altro").sort().forEach(cat => {
+  const li = document.createElement("li");
+  li.className = "categoryItem";
+
+  const span = document.createElement("span");
+  span.textContent = cat;
+  li.appendChild(span);
+
+  if (cat !== "Indefinito") {
+    // Pulsante elimina
+    const delBtn = document.createElement("button");
+    delBtn.textContent = "X";
+    delBtn.className = "categoryDelete";
+    delBtn.onclick = () => removeRecurringCategory(cat);
+    li.appendChild(delBtn);
+
+    // Pulsante modifica
+    const editBtn = document.createElement("button");
+    editBtn.textContent = "✎";
+    editBtn.className = "categoryEdit";
+    editBtn.onclick = () => editRecurringCategoryPrompt(cat);
+    li.appendChild(editBtn);
+  }
+
+  recCategoryList.appendChild(li);
+});
+
+// Aggiungi "Altro" in fondo
+if (recurringCategories.includes("Altro")) {
+  const li = document.createElement("li");
+  li.className = "categoryItem";
+  li.textContent = "Altro";
+  recCategoryList.appendChild(li);
+}
+}
+
+function addCategory() {
+  const input = document.getElementById("newCategory");
+  let newCat = capitalize(input.value.trim());
+  if (!newCat || normalCategories.includes(newCat) || newCat === "Indefinito") return;
+
+  normalCategories.push(newCat);
+
+  // Ordina alfabeticamente tutte tranne "Altro"
+  normalCategories = normalCategories.filter(c => c !== "Altro" && c !== "Indefinito").sort();
+  normalCategories.push("Altro"); // Altro sempre in fondo
+
+  input.value = "";
+  save();
+  renderCategories();
+}
+
+function removeCategory(cat) {
+  normalCategories = normalCategories.filter(c => c !== cat);
+
+  // Aggiorna transazioni normali
+  transactions.forEach(t => {
+    if (!t.isRecurringGenerated && t.category === cat) t.category = "Indefinito";
+  });
+
+  save();
+  renderCategories();
+  render();
+}
+
+function editTransactionCategory(index) {
+  const tx = transactions[index];
+  if (!tx) return;
+
+  // Blocca modifiche per pagamenti ricorrenti
+  if (tx.isRecurringGenerated) {
+    alert("Non puoi modificare un pagamento ricorrente qui. Modificalo dalla sezione Pagamenti Ricorrenti.");
+    return;
+  }
+
+  // Crea un overlay temporaneo con un select
+  const overlay = document.createElement("div");
+  overlay.style.position = "fixed";
+  overlay.style.top = "0";
+  overlay.style.left = "0";
+  overlay.style.width = "100%";
+  overlay.style.height = "100%";
+  overlay.style.background = "rgba(0,0,0,0.5)";
+  overlay.style.display = "flex";
+  overlay.style.alignItems = "center";
+  overlay.style.justifyContent = "center";
+  overlay.style.zIndex = "9999";
+
+  const modal = document.createElement("div");
+  modal.style.background = "#fff";
+  modal.style.padding = "20px";
+  modal.style.borderRadius = "12px";
+  modal.style.textAlign = "center";
+  modal.style.minWidth = "250px";
+
+  const title = document.createElement("h3");
+  title.textContent = "Scegli nuova categoria";
+  modal.appendChild(title);
+
+  const select = document.createElement("select");
+  normalCategories.forEach(c => {
+    const opt = document.createElement("option");
+    opt.value = c;
+    opt.textContent = c;
+    if (c === tx.category) opt.selected = true;
+    select.appendChild(opt);
+  });
+  modal.appendChild(select);
+
+  const okBtn = document.createElement("button");
+  okBtn.textContent = "Conferma";
+  okBtn.style.marginTop = "10px";
+  okBtn.onclick = () => {
+    tx.category = select.value;
+    save();
+    render();
+    document.body.removeChild(overlay);
+  };
+  modal.appendChild(okBtn);
+
+  const cancelBtn = document.createElement("button");
+  cancelBtn.textContent = "Annulla";
+  cancelBtn.style.marginTop = "10px";
+  cancelBtn.style.marginLeft = "10px";
+  cancelBtn.onclick = () => document.body.removeChild(overlay);
+  modal.appendChild(cancelBtn);
+
+  overlay.appendChild(modal);
+  document.body.appendChild(overlay);
+}
+
+function addRecurringCategory() {
+  const input = document.getElementById("newRecCategory");
+  let newCat = capitalize(input.value.trim());
+  if (!newCat || recurringCategories.includes(newCat) || newCat === "Indefinito") return;
+
+  recurringCategories.push(newCat);
+
+  // Ordina alfabeticamente tutte tranne "Altro"
+  recurringCategories = recurringCategories.filter(c => c !== "Altro" && c !== "Indefinito").sort();
+  recurringCategories.push("Altro"); // Altro sempre in fondo
+
+  input.value = "";
+  save();
+  renderCategories();
+}
+
+function removeRecurringCategory(cat) {
+  recurringCategories = recurringCategories.filter(c => c !== cat);
+
+  // Aggiorna ricorrenze
+  recurringTemplates.forEach(rt => {
+    if (rt.category === cat) rt.category = "Indefinito";
+  });
+
+  // Aggiorna transazioni generate
+  transactions.forEach(t => {
+    if (t.isRecurringGenerated && t.category === cat) t.category = "Indefinito";
+  });
+
+  save();
+  renderCategories();
+  renderRecurring();
+  render();
+}
+
+function editRecurringCategoryPrompt(oldCat) {
+  const newCat = prompt("Modifica categoria ricorrenza:", oldCat);
+  if (!newCat) return;
+
+  const formattedCat = capitalize(newCat.trim());
+  if (!formattedCat || recurringCategories.includes(formattedCat) || formattedCat === "Indefinito") return;
+
+  // Aggiorna categoria
+  recurringCategories = recurringCategories.map(c => c === oldCat ? formattedCat : c);
+
+  // Aggiorna ricorrenze e transazioni generate
+  recurringTemplates.forEach(rt => {
+    if (rt.category === oldCat) rt.category = formattedCat;
+  });
+  transactions.forEach(t => {
+    if (t.isRecurringGenerated && t.category === oldCat) t.category = formattedCat;
+  });
+
+  save();
+  renderCategories();
+  renderRecurring();
+  render();
+}
+
+function addTransaction() {
+  const amountRaw = document.getElementById("amount").value.trim();
+  const amount = normalizeAmount(amountRaw);
+  if (amount === null) {
+    alert("Importo non valido.");
+    return;
+  }
+
+  const descInput = document.getElementById("desc").value.trim();
+  const category = document.getElementById("category").value;
+  const dateInput = document.getElementById("date").value;
+
+  let dateObj;
+  if (dateInput) dateObj = parseISODate(dateInput);
+  else dateObj = new Date();
+
+  if (!dateObj) {
+    alert("Data non valida.");
+    return;
+  }
+
+ const desc = descInput ? capitalize(descInput) : (amount >= 0 ? "Entrata" : "Pagamento");
+
+  // Forza coerenza: entrate positive, uscite negative
+  const finalAmount = amount >= 0 ? Math.abs(amount) : -Math.abs(amount);
+
+  transactions.push({
+    id: uid(),
+    desc,
+    amount: finalAmount,
+    category,
+    dateISO: toISODate(dateObj),
+    dateDisplay: formatDate(dateObj)
+});
+
+  document.getElementById("amount").value = "";
+  document.getElementById("desc").value = "";
+  document.getElementById("date").value = "";
+
+  save();
+  render();
+}
+
+function addRecurring() {
+  const amountRaw = document.getElementById("recAmount").value.trim();
+  const amount = normalizeAmount(amountRaw);
+  if (amount === null) {
+    alert("Importo non valido.");
+    return;
+  }
+
+  const descInput = document.getElementById("recDesc").value.trim();
+  const category = document.getElementById("recCategory").value;
+  const frequency = document.getElementById("recFrequency").value;
+
+  let startDate = document.getElementById("recStartDate").value;
+  if (!startDate) startDate = todayISO();
+
+  const desc = descInput ? capitalize(descInput) : (amount >= 0 ? "Entrata" : "Pagamento");
+
+  // Forza coerenza: entrate positive, uscite negative
+  const finalAmount = amount >= 0 ? Math.abs(amount) : -Math.abs(amount);
+
+  recurringTemplates.push({
+    id: uid(),
+    desc,
+    amount: finalAmount,
+    category,
+    startDate,
+    frequency
+});
+
+  document.getElementById("recAmount").value = "";
+  document.getElementById("recDesc").value = "";
+  document.getElementById("recStartDate").value = "";
+
+  save();
+  generateDueRecurringTransactions();
+  renderRecurring();
+  render();
+}
+
+function removeRecurring(index) {
+  recurringTemplates.splice(index, 1);
+  save();
+  renderRecurring();
+  render();
+}
+
+function showRecurringCategorySelector(recurring) {
+  // Overlay scuro
+  const overlay = document.createElement("div");
+  overlay.style.position = "fixed";
+  overlay.style.top = "0";
+  overlay.style.left = "0";
+  overlay.style.width = "100%";
+  overlay.style.height = "100%";
+  overlay.style.background = "rgba(0,0,0,0.5)";
+  overlay.style.display = "flex";
+  overlay.style.alignItems = "center";
+  overlay.style.justifyContent = "center";
+  overlay.style.zIndex = "9999";
+
+  // Modal
+  const modal = document.createElement("div");
+  modal.style.background = "#fff";
+  modal.style.padding = "20px";
+  modal.style.borderRadius = "12px";
+  modal.style.textAlign = "center";
+  modal.style.minWidth = "250px";
+
+  const title = document.createElement("h3");
+  title.textContent = "Scegli categoria";
+  modal.appendChild(title);
+
+  // SELECT categorie
+  const select = document.createElement("select");
+
+  recurringCategories.forEach(c => {
+    const opt = document.createElement("option");
+    opt.value = c;
+    opt.textContent = c;
+    if (c === recurring.category) opt.selected = true;
+    select.appendChild(opt);
+  });
+
+  modal.appendChild(select);
+
+  // Bottone conferma
+  const okBtn = document.createElement("button");
+  okBtn.textContent = "Conferma";
+  okBtn.style.marginTop = "10px";
+
+  okBtn.onclick = () => {
+    const newCat = select.value;
+
+    // aggiorna template
+    recurring.category = newCat;
+
+    // aggiorna tutte le transazioni generate
+    transactions.forEach(t => {
+      if (t.recurringId === recurring.id) {
+        t.category = newCat;
+      }
+    });
+
+    save();
+    renderRecurring();
+    render();
+
+    document.body.removeChild(overlay);
+  };
+
+  modal.appendChild(okBtn);
+
+  // Bottone annulla
+  const cancelBtn = document.createElement("button");
+  cancelBtn.textContent = "Annulla";
+  cancelBtn.style.marginTop = "10px";
+  cancelBtn.style.marginLeft = "10px";
+
+  cancelBtn.onclick = () => {
+    document.body.removeChild(overlay);
+  };
+
+  modal.appendChild(cancelBtn);
+
+  overlay.appendChild(modal);
+  document.body.appendChild(overlay);
+}
+
+function generateDueRecurringTransactions() {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  let changed = false;
+
+  for (const rt of recurringTemplates) {
+    const start = parseISODate(rt.startDate);
+    if (!start) continue;
+
+    let current = new Date(start);
+    current.setHours(0, 0, 0, 0);
+
+    while (current <= today) {
+      const dateISO = toISODate(current);
+      const generatedKey = `${rt.id}|${dateISO}`;
+
+     const exists = transactions.some(t =>
+  t.generatedKey === generatedKey
+);
+
+      if (!exists) {
+        transactions.push({
+  id: uid(),
+  desc: rt.desc,
+  amount: rt.amount,
+  category: rt.category,
+  dateISO,
+  dateDisplay: formatDate(current),
+  generatedKey,
+  isRecurringGenerated: true,
+  recurringFrequency: rt.frequency,
+  recurringId: rt.id   // 🔥 AGGIUNGI QUESTO
+});
+        changed = true;
+      }
+
+      current = nextOccurrence(current, rt.frequency);
+    }
+  }
+
+  if (changed) save();
+}
+
+function renderRecurring() {
+  const list = document.getElementById("recurringList");
+  list.innerHTML = "";
+
+  const incoming = recurringTemplates.filter(r => r.amount >= 0);
+  const outgoing = recurringTemplates.filter(r => r.amount < 0);
+
+  function renderGroup(group, title) {
+    if (group.length === 0) return;
+
+    const h = document.createElement("h3");
+    h.textContent = title;
+    list.appendChild(h);
+
+    group.forEach((r) => {
+      const li = document.createElement("li");
+      li.className = r.amount >= 0 ? "positive" : "negative";
+
+      const start = parseISODate(r.startDate);
+      const startText = start ? formatDate(start) : r.startDate;
+
+      const text = document.createElement("span");
+      text.textContent = `${r.desc} (${r.category}) ${r.amount >= 0 ? '+' : ''}${r.amount}€ - ${frequencyLabel(r.frequency)} dal ${startText}`;
+      li.appendChild(text);
+
+      // Pulsante Modifica categoria
+      const editBtn = document.createElement("button");
+      editBtn.textContent = "Modifica";
+      editBtn.className = "edit";
+      editBtn.style.background = "#6c757d";
+      editBtn.style.color = "white";
+      editBtn.onclick = () => showRecurringCategorySelector(r);
+      li.appendChild(editBtn);
+
+      // Pulsante Elimina ricorrenza
+      const delBtn = document.createElement("button");
+      delBtn.textContent = "X";
+      delBtn.className = "delete";
+      delBtn.style.background = "#e53935";
+      delBtn.style.color = "white";
+      delBtn.onclick = () => {
+        if (confirm("Vuoi eliminare questa ricorrenza?")) {
+          removeRecurring(recurringTemplates.indexOf(r));
+        }
+      };
+      li.appendChild(delBtn);
+
+      list.appendChild(li);
+    });
+  }
+
+  renderGroup(incoming, "Entrate ricorrenti");
+  renderGroup(outgoing, "Uscite ricorrenti");
+
+  if (incoming.length === 0 && outgoing.length === 0) {
+    list.textContent += "Nessuna ricorrenza trovata.";
+  }
+}
+
+function removeTransaction(index) {
+  transactions.splice(index, 1);
+  save();
+  render();
+}
+
+function getTransactionISODate(t) {
+  if (t.dateISO) return t.dateISO;
+  if (!t.dateDisplay) return null;
+
+  const parts = t.dateDisplay.split("/");
+  if (parts.length !== 3) return null;
+
+  const [dd, mm, yyyy] = parts;
+  return `${yyyy}-${mm}-${dd}`;
+}
+
+function updateMonthlySummary() {
+  const monthValue = document.getElementById("monthPicker").value;
+  if (!monthValue) return;
+
+  let income = 0;
+  let expense = 0;
+
+  transactions.forEach(t => {
+    const iso = getTransactionISODate(t);
+    if (!iso) return;
+
+    if (iso.startsWith(monthValue)) {
+      if (t.amount >= 0) income += t.amount;
+      else expense += Math.abs(t.amount);
+    }
+  });
+
+  document.getElementById("monthlyIncome").textContent = income.toFixed(2).replace(/\.00$/, "");
+  document.getElementById("monthlyExpense").textContent = expense.toFixed(2).replace(/\.00$/, "");
+  document.getElementById("monthlyBalance").textContent = (income - expense).toFixed(2).replace(/\.00$/, "");
+}
+
+function filterTransactionsForChart() {
+  const period = document.getElementById("chartPeriod").value || "all";
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  return transactions.filter(t => {
+    const iso = getTransactionISODate(t);
+    if (!iso) return false;
+
+    const d = parseISODate(iso);
+    if (!d) return false;
+    d.setHours(0, 0, 0, 0);
+
+    if (period === "all") return true;
+
+    if (period === "month") {
+      return d.getFullYear() === today.getFullYear() && d.getMonth() === today.getMonth();
+    }
+
+    if (period === "year") {
+      return d.getFullYear() === today.getFullYear();
+    }
+
+    if (period === "30days") {
+      const diff = (today - d) / (1000 * 60 * 60 * 24);
+      return diff >= 0 && diff <= 30;
+    }
+
+    return true;
+  });
+}
+
+function render() {
+  generateDueRecurringTransactions();
+  transactions.sort((a, b) => new Date(a.dateISO) - new Date(b.dateISO));
+
+  const list = document.getElementById("list");
+  list.innerHTML = "";
+
+  let displayTransactions = showAll ? transactions : transactions.slice(-2);
+  let balance = transactions.reduce((sum, t) => sum + t.amount, 0);
+
+  displayTransactions.forEach((t, idx) => {
+    const realIndex = showAll ? idx : transactions.length - displayTransactions.length + idx;
+
+    const li = document.createElement("li");
+    li.className = t.amount >= 0 ? "positive" : "negative";
+
+    const text = document.createElement("span");
+    const prefix = t.isRecurringGenerated ? `[${frequencyLabel(t.recurringFrequency)}] ` : "";
+    text.textContent = `${t.dateDisplay} - ${prefix}${t.desc} (${t.category}) ${t.amount >= 0 ? '+' : ''}${t.amount}€`;
+    li.appendChild(text);
+
+    // Mostra il pulsante Modifica solo se NON è un pagamento generato da ricorrenza
+    if (!t.isRecurringGenerated) {
+      const editBtn = document.createElement("button");
+      editBtn.textContent = "Modifica";
+      editBtn.className = "delete";
+      editBtn.style.background = "#6c757d";
+      editBtn.onclick = () => editTransactionCategory(realIndex);
+      li.appendChild(editBtn);
+    }
+
+    const btn = document.createElement("button");
+    btn.textContent = "X";
+    btn.className = "delete";
+    btn.onclick = () => removeTransaction(realIndex);
+    li.appendChild(btn);
+
+    list.appendChild(li);
+  });
+
+  document.getElementById("balance").textContent = balance.toFixed(2).replace(/\.00$/, "");
+
+  if (document.getElementById("showChart").checked) {
+  updateChart();
+}
+
+  updateMonthlySummary();
+}
+
+function toggleList() {
+  showAll = !showAll;
+  document.getElementById("toggleList").textContent = showAll ? "Nascondi" : "Mostra Tutto";
+  render();
+}
+
+function toggleChart() {
+  const wrapper = document.getElementById("chartWrapper");
+  const chartContainer = document.getElementById("chartContainer");
+  const percentLabel = document.getElementById("percentCheckboxLabel");
+  const periodWrap = document.getElementById("chartPeriodWrap");
+  const show = document.getElementById("showChart").checked;
+
+  if (show) {
+    wrapper.style.display = "flex";
+    chartContainer.style.display = "flex";
+    periodWrap.style.display = "block";
+    percentLabel.style.display = "flex";
+
+    if (!chartInitialized) {
+      document.getElementById("chartPeriod").value = "30days";
+      chartInitialized = true;
+    }
+
+    requestAnimationFrame(() => updateChart());
+  } else {
+    wrapper.style.display = "none";
+    chartContainer.style.display = "none";
+    periodWrap.style.display = "none";
+    percentLabel.style.display = "none";
+    document.getElementById("chartLegend").style.display = "none";
+
+    if (chart) {
+      chart.destroy();
+      chart = null;
+    }
+  }
+}
+
+function toggleDarkMode() {
+  document.body.classList.toggle("dark");
+}
+
+function toggleCategorySection() {
+  const section = document.getElementById("categorySection");
+  const icon = document.getElementById("categoryIcon");
+
+  if (section.style.display === "block") {
+    section.style.display = "none";
+    section.classList.remove("section-yellow");
+    icon.textContent = "▶";
+  } else {
+    section.style.display = "block";
+    section.classList.add("section-yellow");
+    icon.textContent = "▼";
+  }
+}
+
+function toggleRecCategorySection() {
+  const section = document.getElementById("recCategorySection");
+  const icon = document.getElementById("recCategoryIcon");
+  if (section.style.display === "none" || section.style.display === "") {
+    section.style.display = "block";
+    icon.textContent = "▼";
+  } else {
+    section.style.display = "none";
+    icon.textContent = "▶";
+  }
+}
+
+function toggleRecurringSection() {
+  const section = document.getElementById("recurringSection");
+  const icon = document.getElementById("recurringIcon");
+
+  if (section.style.display === "block") {
+    section.style.display = "none";
+    section.classList.remove("section-purple");
+    icon.textContent = "▶";
+  } else {
+    section.style.display = "block";
+    section.classList.add("section-purple");
+    icon.textContent = "▼";
+  }
+}
+
+function toggleMonthlySection() {
+  const section = document.getElementById("monthlySection");
+  const icon = document.getElementById("monthlyIcon");
+
+  if (section.style.display === "block") {
+    section.style.display = "none";
+    section.classList.remove("section-green");
+    icon.textContent = "▶";
+  } else {
+    section.style.display = "block";
+    section.classList.add("section-green");
+    icon.textContent = "▼";
+    updateMonthlySummary();
+  }
+}
+
+function exportData() {
+  const data = {
+    transactions,
+    normalCategories,
+    recurringTemplates,
+    recurringCategories
+  };
+
+  const dataStr = JSON.stringify(data, null, 2);
+  const blob = new Blob([dataStr], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "money-app-backup.json";
+  a.click();
+
+  URL.revokeObjectURL(url);
+}
+
+function triggerImport() {
+  document.getElementById("importFile").click();
+}
+
+document.getElementById("importFile").addEventListener("change", importData);
+
+function importData(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+
+  reader.onload = function(e) {
+    try {
+      const data = JSON.parse(e.target.result);
+
+      if (!data.transactions || !data.normalCategories || !data.recurringTemplates || !data.recurringCategories) {
+        alert("File non valido.");
+        return;
+      }
+
+      if (!confirm("Questo sovrascriverà tutti i dati attuali. Continuare?")) return;
+
+      transactions = data.transactions;
+      normalCategories = data.normalCategories;
+      recurringTemplates = data.recurringTemplates;
+      recurringCategories = data.recurringCategories;
+
+      save();
+      renderCategories();
+      renderRecurring();
+      render();
+
+      alert("Dati importati con successo!");
+
+    } catch (err) {
+      alert("Errore durante l'import.");
+    }
+  };
+
+  reader.readAsText(file);
+}
+
+function renderChartLegend(labels, data, colors, showPercent) {
+  const legendEl = document.getElementById("chartLegend");
+  legendEl.innerHTML = "";
+
+  if (!chart || labels.length === 0) {
+    legendEl.style.display = "none";
+    return;
+  }
+
+  legendEl.style.display = "flex";
+
+  const total = data.reduce((a, b) => a + b, 0);
+
+  labels.forEach((label, i) => {
+    const visible = !hiddenLegendLabels.has(label);
+
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "chart-legend-item" + (visible ? "" : " hidden");
+
+    const text = showPercent && total
+      ? `${label} (${((data[i] / total) * 100).toFixed(1)}%)`
+      : label;
+
+    btn.innerHTML = `
+      <span class="chart-legend-swatch" style="background:${colors[i]}"></span>
+      <span>${text}</span>
+    `;
+
+    btn.onclick = () => {
+      if (hiddenLegendLabels.has(label)) hiddenLegendLabels.delete(label);
+      else hiddenLegendLabels.add(label);
+
+      chart.toggleDataVisibility(i);
+      chart.update();
+      renderChartLegend(labels, data, colors, showPercent);
+    };
+
+    legendEl.appendChild(btn);
+  });
+}
+
+function colorFromLabel(label) {
+  if (label === "Ricorrenze") return "hsl(280, 65%, 60%)";
+
+  let hash = 0;
+  for (let i = 0; i < label.length; i++) {
+    hash = label.charCodeAt(i) + ((hash << 5) - hash);
+  }
+
+  const hue = Math.abs(hash) % 360;
+  return `hsl(${hue}, 70%, 60%)`;
+}
+
+const showPercentagesCheckbox = document.getElementById("showPercentages");
+
+function updateChart() {
+  if (!document.getElementById("showChart").checked) return;
+
+  const chartCanvas = document.getElementById("chart");
+  const messageEl = document.getElementById("chartMessage");
+  const hintEl = document.getElementById("chartHint");
+  const legendEl = document.getElementById("chartLegend");
+  const showPercent = document.getElementById("showPercentages").checked;
+  const period = document.getElementById("chartPeriod").value || "all";
+
+  const filteredTransactions = filterTransactionsForChart();
+
+  const categoriesData = {};
+  let recurringTotal = 0;
+
+  filteredTransactions.forEach(t => {
+    if (t.amount < 0) {
+      if (t.isRecurringGenerated) {
+        recurringTotal += Math.abs(t.amount);
+      } else {
+        categoriesData[t.category] = (categoriesData[t.category] || 0) + Math.abs(t.amount);
+      }
+    }
+  });
+
+  const labels = Object.keys(categoriesData);
+  const data = Object.values(categoriesData);
+
+  if (recurringTotal > 0) {
+    labels.push("Ricorrenze");
+    data.push(recurringTotal);
+  }
+
+  if (data.length === 0) {
+    chartCanvas.style.display = "none";
+    messageEl.style.display = "block";
+    hintEl.style.display = "none";
+    legendEl.style.display = "none";
+
+    messageEl.textContent =
+      period === "month" ? "Non ci sono ancora pagamenti nel mese corrente." :
+      period === "year" ? "Non ci sono ancora pagamenti nell'anno corrente." :
+      period === "30days" ? "Non ci sono ancora pagamenti negli ultimi 30 giorni." :
+      "Non ci sono ancora pagamenti.";
+
+    if (chart) {
+      chart.destroy();
+      chart = null;
+    }
+    return;
+  }
+
+  chartCanvas.style.display = "block";
+  messageEl.style.display = "none";
+  hintEl.style.display = "block";
+
+  if (chart) chart.destroy();
+
+  const colors = labels.map(label => colorFromLabel(label));
+
+  chart = new Chart(chartCanvas, {
+    type: "doughnut",
+    data: {
+      labels,
+      datasets: [{
+        data,
+        backgroundColor: colors,
+        borderColor: "#fff",
+        borderWidth: 2,
+        hoverOffset: 10
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          display: false
+        },
+        tooltip: {
+          callbacks: {
+            label(context) {
+    const total = context.dataset.data.reduce((a, b) => a + b, 0);
+    // arrotondiamo a due decimali
+    const value = Math.round(context.parsed * 100) / 100;
+    const perc = total ? ((value / total) * 100).toFixed(1) : "0.0";
+    return `${context.label}: ${value.toFixed(2)}€ (${perc}%)`;
+}
+          }
+        }
+      },
+      cutout: "40%"
+    }
+  });
+
+  labels.forEach((label, i) => {
+    if (hiddenLegendLabels.has(label)) {
+      chart.toggleDataVisibility(i);
+    }
+  });
+  chart.update();
+
+  renderChartLegend(labels, data, colors, showPercent);
+}
+
+document.getElementById("showPercentages").addEventListener("change", updateChart);
+
+document.getElementById("chartPeriod").addEventListener("change", updateChart);
+
+document.getElementById("amount").addEventListener("input", function () {
+  guardAmountInput(this);
+});
+
+document.getElementById("recAmount").addEventListener("input", function () {
+  guardAmountInput(this);
+});
+
+document.getElementById("monthPicker").addEventListener("change", updateMonthlySummary);
+
+renderCategories();
+generateDueRecurringTransactions();
+renderRecurring();
+render();
+
+document.getElementById("categorySection").style.display = "none";
+document.getElementById("recurringSection").style.display = "none";
+document.getElementById("monthlySection").style.display = "none";
+document.getElementById("chartPeriodWrap").style.display = "none";
+
+const now = new Date();
+document.getElementById("monthPicker").value =
+  now.getFullYear() + "-" + String(now.getMonth() + 1).padStart(2, "0");
+updateMonthlySummary();
+
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.register("sw.js")
+    .then(() => console.log("Service Worker registrato"))
+    .catch(err => console.log("Errore SW:", err));
+}
+</script>
+
+</body>
+</html>
